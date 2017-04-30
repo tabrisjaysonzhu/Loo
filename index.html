@@ -207,6 +207,11 @@
 				var startValue = parseInt(Math.random() * 100);
 				globalGame = gameInitial(candidatesN, startValue);
 				renderGame(globalGame);
+				$('#difficulty').change(function() {
+					candidatesN = $(this).val();
+					globalGame = gameInitial(candidatesN, startValue);
+					renderGame(globalGame);
+				});
 			});
 		</script>
 		<style>
@@ -238,7 +243,14 @@
 	</head>
 	<body>
 		<div class="container">
-			<div class="row">Score: <span id="score">0</span></div>
+			<div class="row">
+				Score: <span id="score">0</span>
+				Difficulty: <select id='difficulty'>
+					<option value="6">Easy</option>
+					<option value="4">Medium</option>
+					<option value="3">Hard</option>
+				</select>
+			</div>
 			<div class="row">
 				Question Number (has to be part of the equation):
 				<div id="display"></div>
