@@ -199,6 +199,7 @@
 				// the equation is equal
 				var localScore = (1 + usedCandidatesCount) * usedCandidatesCount / 2;
 				score += localScore;
+				startValue = rightResult;
 				globalGame = gameInitial(candidatesN, rightResult);
 				renderGame(globalGame);
 			}
