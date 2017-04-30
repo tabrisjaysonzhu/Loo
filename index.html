@@ -1,0 +1,261 @@
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+		<script>
+			/*
+			 * gameObjStructure = {
+			 *	questionValue: integer,
+			 *	candidateList: [integer],
+			 *  displayCards: [
+			 *		{
+			 *			type: ENUM("number", "operator", "question"),
+			 *			candidateOrder: index,
+			 *			operator: operator,
+			 *			value: string
+			 *		}
+			 *	]
+			 * }
+			 */
+			globalGame = null;
+			candidatesN = 6;
+			score = 0;
+			function renderGame(game) {
+				$('#error').text("");
+				$('#score').text(score);
+				$('.inputCard').unbind('click');
+				$('.candidateCard').unbind('click');
+
+				var candidates = [];
+				var questionDisable = false;
+				$.each(game.candidateList, function(index, candidate) {
+					candidates.push({
+						value: candidate,
+						disable: false
+					});
+				})
+				$.each(game.displayCards, function(index, displayCard) {
+					if (displayCard.type == 'number') {
+						candidates[displayCard.candidateOrder].disable = true;
+					} else if (displayCard.type == 'question') {
+						questionDisable = true;
+					}
+				})
+				setQuestion(game.questionValue, questionDisable);
+				setCandidates(candidates);
+				setDisplay(game);
+
+				$('.candidateCard').bind('click', function() {
+					useCandidate($(this));
+				});
+				$('.inputCard').bind('click', function() {
+					disCardInput($(this));
+				});
+			}
+			function setQuestion(questionNumber, questionDisable) {
+				if (questionDisable) {	
+					$('#display').html("<div id='questionCard' class='disableCard questionCard numberCard candidateCard' value='" + questionNumber + "'>" +questionNumber+ "</div>");
+				} else {
+					$('#display').html("<div id='questionCard' class='questionCard numberCard candidateCard' value='" + questionNumber + "'>" +questionNumber+ "</div>");
+				}
+			}
+			function setCandidates(candidates) {
+				var candidatesHTML = "";
+				$.each(candidates, function(index, obj) {
+					if (obj.disable) {
+						candidatesHTML += "<div id='candidateCard_"+index+"' class='numberCard candidateCard disableCard' value='" + index + "'>" + obj.value + "</div>";
+					} else {
+						candidatesHTML += "<div id='candidateCard_"+index+"' class='numberCard candidateCard' value='" + index + "'>" + obj.value + "</div>";
+					}
+				});
+				$('#candidates').html(candidatesHTML);
+			}
+			function setDisplay(game) {
+				displayCards = game.displayCards;
+				var displayHTML = "";
+				$.each(displayCards, function(index, obj) {
+					displayHTML += "<div class='inputCard' value='" + index + "'>" +obj.value+ "</div>";
+				});
+				$('#inputPanel').html(displayHTML);
+
+			}
+			function gameInitial(candidatesN, startValue) {
+				var randomList = [];
+				for (var i = 0; i < candidatesN; i++) {
+					randomList.push(parseInt(Math.random() * 10));
+				}
+				return {
+					questionValue: startValue,
+					candidateList: randomList,
+					displayCards: []
+				};
+			}
+			function disCardInput(obj) {
+				var objIndex = obj.attr('value');
+				globalGame.displayCards.splice( objIndex, 1 );
+				renderGame(globalGame);
+			}
+			function useCandidate(obj) {
+				if (obj.hasClass('disableCard')) {
+					obj.unbind('click');
+					return
+				}
+				if (obj.hasClass('numberCard')) {
+					obj.addClass('disableCard');
+				}
+				var newCandidate = {
+					type: null,
+					candidateOrder: -1,
+					operator: null,
+					value: null
+				};
+				if (obj.hasClass('questionCard')) {
+					newCandidate.type = "question";
+					newCandidate.value = obj.html();
+				} else if (obj.hasClass('numberCard')) {
+					newCandidate.type = "number";
+					newCandidate.value = obj.html();
+					newCandidate.candidateOrder = obj.attr('value');
+				} else if (obj.hasClass('operatorCard')) {
+					newCandidate.type = "operator";
+					newCandidate.value = obj.html();
+					newCandidate.operator = obj.html();
+				}
+				globalGame.displayCards.push(newCandidate);
+				renderGame(globalGame);
+			}
+
+			function submitError(text) {
+				$('#error').text(text);
+			}
+
+			function submitGame() {
+				var usedCandidatesCount = 0;
+				// validation question number must be used
+				var questionCount = 0;
+				var equalCount = 0;
+				var equationLeft = "";
+				var equationRight = "";
+				var hadEquation = false;
+				$.each(globalGame.displayCards, function(index, obj) {
+					if (obj.type == 'question') {
+						questionCount += 1;
+					}
+					if (obj.type == 'operator' && obj.operator == '=') {
+						equalCount += 1;
+						hadEquation = true;
+					} else {
+						if (obj.type == 'number') {
+							usedCandidatesCount += 1;
+						}
+						if (hadEquation) {
+							equationRight = equationRight.concat(obj.value);
+						} else {
+							equationLeft = equationLeft.concat(obj.value);
+						}
+					}
+				});
+
+				if (questionCount != 1) {
+					submitError("you must use the question number");
+					return;
+				}
+				// has and only has 1 equal
+				if (equalCount != 1) {
+					submitError("you must form an equation");
+					return;
+				}
+				// valid input with bracket
+				var leftResult = null;
+				var rightResult = null;
+				try {
+					leftResult = eval(equationLeft);
+				} catch (err) {
+					submitError("you must form an equation");
+					return;
+				}
+				try {
+					rightResult = eval(equationRight);
+				} catch (err) {
+					submitError("you must form an equation");
+					return;
+				}
+				if (typeof(leftResult) == "undefined" || typeof(rightResult) == "undefined" || leftResult != rightResult) {
+					submitError("you must form an equation");
+					return;
+				}
+				// the equation is equal
+				var localScore = (1 + usedCandidatesCount) * usedCandidatesCount / 2;
+				score += localScore;
+				globalGame = gameInitial(candidatesN, rightResult);
+				renderGame(globalGame);
+			}
+
+			$(document).ready(function(){
+				var startValue = parseInt(Math.random() * 100);
+				globalGame = gameInitial(candidatesN, startValue);
+				renderGame(globalGame);
+			});
+		</script>
+		<style>
+			.candidateCard {
+				border: 1px solid #ccc;
+				border-radius: 16px;
+				display: inline-block;
+				font-size: 50;
+				padding: 16px;
+				margin: 12px;
+			}
+			.inputCard {
+				border: 1px solid #ccc;
+				border-radius: 16px;
+				display: inline-block;
+				font-size: 50;
+				padding: 16px;
+			}
+			.operatorCard {
+				border: 1px solid #0ff !important;
+			}
+			.disableCard {
+				color: #ccc;
+			}
+			.error {
+				color: red;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row">Score: <span id="score">0</span></div>
+			<div class="row">
+				<div id="display"></div>
+				<div id="operations">
+					<div id="operatorAdd" class="operatorCard candidateCard" value="+">+</div>
+					<div id="operatorMinus" class="operatorCard candidateCard" value="-">-</div>
+					<div id="operatorMult" class="operatorCard candidateCard" value="*">*</div>
+					<div id="operatorDivide" class="operatorCard candidateCard" value="/">/</div>
+					<div id="operatorEqual" class="operatorCard candidateCard" value="=">=</div>
+					<div id="operatorLeftBr" class="operatorCard candidateCard" value="(">(</div>
+					<div id="operatorRightBr" class="operatorCard candidateCard" value=")">)</div>
+				</div>
+			</div>
+			<div class="row">
+				<div id="candidates"></div>
+			</div>
+			<div class="row">
+				<div id="inputPanel"></div>
+			</div>
+
+			<div class="row">
+				<div><button onclick="submitGame();">Submit</button><span class="error" id="error"></span></div>
+			</div>
+		</div>
+	</body>
+</html>
