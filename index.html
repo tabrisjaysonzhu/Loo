@@ -136,6 +136,11 @@
 				$('#error').text(text);
 			}
 
+			function clearGame() {
+				globalGame.displayCards = [];
+				renderGame(globalGame);
+			}
+
 			function submitGame() {
 				var usedCandidatesCount = 0;
 				// validation question number must be used
@@ -254,7 +259,7 @@
 			</div>
 
 			<div class="row">
-				<div><button onclick="submitGame();">Submit</button><span class="error" id="error"></span></div>
+				<div><button onclick="clearGame();">Clear</button><button onclick="submitGame();">Submit</button><span class="error" id="error"></span></div>
 			</div>
 		</div>
 	</body>
