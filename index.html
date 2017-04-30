@@ -199,7 +199,6 @@
 				// the equation is equal
 				var localScore = (1 + usedCandidatesCount) * usedCandidatesCount / 2;
 				score += localScore;
-				startValue = rightResult;
 				globalGame = gameInitial(candidatesN, rightResult);
 				renderGame(globalGame);
 			}
@@ -210,7 +209,7 @@
 				renderGame(globalGame);
 				$('#difficulty').change(function() {
 					candidatesN = $(this).val();
-					globalGame = gameInitial(candidatesN, startValue);
+					globalGame = gameInitial(candidatesN, globalGame.questionValue);
 					renderGame(globalGame);
 				});
 			});
