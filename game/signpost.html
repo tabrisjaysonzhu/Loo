@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>SignPost</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+		<style type="text/css">
+			div.fullScreen {
+				width: 100%;
+				height: 100%;
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+			div.titleDiv {
+				text-align: center;
+			}
+			div.gameDiv {
+				position: fixed;
+				text-align: center;
+				width: 100%;
+				height: 100%;
+			}
+			div#gameDiv {
+				display: inline-block;
+			}
+			div#setupDiv {
+				margin: 16px;
+			}
+			table.border {
+				border-collapse: collapse;
+			}
+
+			table.border>tr>td {
+				border: 1px solid black;
+			}
+			table.cellTable {
+				width: 90%;
+				height: 90%;
+			}
+			table.cellTable>tr>td {
+				border: 0;
+			}
+		</style>
+		<script>
+			globalGame = null;
+
+			function newCell(x, y) {
+				var cell = {
+					x: x,
+					y: y,
+					value: null,
+					direction: null,
+					prev: null,
+					next: null
+				}
+				return cell;
+			}
+
+			function drawCell(cell) {
+				var cellHtml = "<table width='90%' height='90%' class='cellTable'>";
+				cellHtml += "<tr><td colspan='2'>";
+				if (cell.value) {
+					cellHtml += cell.value;
+				}
+				cellHtml += "</td></tr>";
+				cellHtml += "<tr><td>";
+				if (!cell.prev) {
+					cellHtml += "&#183;";
+				}
+				cellHtml += "</td>";
+				cellHtml += "<td>";
+				if (!cell.next) {
+					cellHtml += '<span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>';
+				}
+				cellHtml += "</td>";
+				cellHtml += "</tr></table>";
+				return cellHtml;
+			}
+
+			function plotGame() {
+				var gameDiv = $('div#game');
+				if (globalGame === null) {
+					// plot game size init
+					$('#gameDiv').hide();
+					$('#gameTable').html("");
+					$('#setupDiv').show();
+				} else {
+					if (!globalGame.start) {
+						// plot set game start
+						$('#setupDiv').hide();
+						$('#gameDiv').show();
+					} else if (!globalGame.end) {
+						// plot set game ends
+						$('#setupDiv').hide();
+						$('#gameDiv').show();
+					} else {
+						// plot game
+						$('#setupDiv').hide();
+						$('#gameDiv').show();
+					}
+					var cellSize = Math.min($('#game').width() / globalGame.width, ($('.fullScreen').height() - $('.titleDiv').height() - 30) / globalGame.height);
+					var html = "";
+					for (var i = 0; i < globalGame.height; i++) {
+						html += "<tr>";
+						for (var j = 0; j < globalGame.width; j++) {
+							html += "<td width='" + cellSize + "' height='" + cellSize + "'>";
+							html +=  drawCell(globalGame.cellMatrix[i][j]);
+							html += "</td>";
+						}
+						html += "</tr>";
+					}
+					$('table#gameTable').html(html);
+				}
+			}
+
+			function newGame() {
+				globalGame = null;
+				plotGame();
+			}
+
+			function setupGame() {
+				var width = parseInt($('#gameWidth').val());
+				var height = parseInt($('#gameHeight').val());
+				if (width && height) {
+					globalGame = {
+						width: width,
+						height: height
+					}
+					cellMatrix = [];
+					for (var i = 0; i < height; i++) {
+						var row = [];
+						for (var j = 0; j < width; j++) {
+							row.push(newCell(j, i));
+						}
+						cellMatrix.push(row);
+					}
+					globalGame = {
+						width: width,
+						height: height,
+						cellMatrix: cellMatrix
+					}
+				}
+				plotGame();
+			}
+
+			$(document).ready(function(){
+				$( window ).resize(function() {
+					plotGame();
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<div class="fullScreen">
+			<div class="titleDiv">
+				<h1>Sign Post</h1>
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-default" onclick="newGame();">New Game</button>
+					<button type="button" class="btn btn-default">Reset</button>
+					<button type="button" class="btn btn-default">Revert</button>
+				</div>
+			</div>
+			<div id="game" class="gameDiv">
+				<div id="setupDiv">
+					<label for='gameWidth'>Width:</label>
+					<input type='text' id='gameWidth' onkeypress='return event.charCode >= 48 && event.charCode <= 57'/>
+					<label for='gameHeight'>Height:</label>
+					<input type='text' id='gameHeight' onkeypress='return event.charCode >= 48 && event.charCode <= 57'/>
+					<button type="button" class="btn btn-default" onclick="setupGame();">Setup Game</button>
+				</div>
+				<div id="gameDiv">
+					<table id="gameTable" class="border"></table>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
